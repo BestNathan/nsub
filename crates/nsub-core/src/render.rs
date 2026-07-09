@@ -68,7 +68,15 @@ impl Renderer {
         let dedup: HashMap<String, NodeGroupContext> = rules
             .dedup
             .into_iter()
-            .map(|(k, v)| (k, NodeGroupContext { name: v.name, nodes: v.nodes }))
+            .map(|(k, v)| {
+                (
+                    k,
+                    NodeGroupContext {
+                        name: v.name,
+                        nodes: v.nodes,
+                    },
+                )
+            })
             .collect();
         ctx.insert("dedup", &dedup);
 
@@ -76,7 +84,15 @@ impl Renderer {
         let exclude: HashMap<String, NodeGroupContext> = rules
             .exclude
             .into_iter()
-            .map(|(k, v)| (k, NodeGroupContext { name: v.name, nodes: v.nodes }))
+            .map(|(k, v)| {
+                (
+                    k,
+                    NodeGroupContext {
+                        name: v.name,
+                        nodes: v.nodes,
+                    },
+                )
+            })
             .collect();
         ctx.insert("exclude", &exclude);
 
@@ -84,7 +100,15 @@ impl Renderer {
         let group: HashMap<String, NodeGroupContext> = rules
             .group
             .into_iter()
-            .map(|(k, v)| (k, NodeGroupContext { name: v.name, nodes: v.nodes }))
+            .map(|(k, v)| {
+                (
+                    k,
+                    NodeGroupContext {
+                        name: v.name,
+                        nodes: v.nodes,
+                    },
+                )
+            })
             .collect();
         ctx.insert("group", &group);
 
@@ -92,7 +116,15 @@ impl Renderer {
         let pipeline: HashMap<String, NodeGroupContext> = rules
             .pipeline
             .into_iter()
-            .map(|(k, v)| (k, NodeGroupContext { name: v.name, nodes: v.nodes }))
+            .map(|(k, v)| {
+                (
+                    k,
+                    NodeGroupContext {
+                        name: v.name,
+                        nodes: v.nodes,
+                    },
+                )
+            })
             .collect();
         ctx.insert("pipeline", &pipeline);
 

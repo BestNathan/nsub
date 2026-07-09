@@ -12,7 +12,7 @@
 //!
 //! 所有 URL 部件都走 decode pipe，不只是 userinfo。
 
-use crate::pipe::{PipeRegistry, PipeError};
+use crate::pipe::{PipeError, PipeRegistry};
 use crate::types::NodeContext;
 use serde::Deserialize;
 use serde_json::Value;
@@ -72,7 +72,7 @@ impl ProtocolRegistry {
         for entry in std::fs::read_dir(dir)? {
             let entry = entry?;
             let path = entry.path();
-            if path.extension().map_or(true, |e| e != "toml") {
+            if path.extension().is_none_or(|e| e != "toml") {
                 continue;
             }
 
@@ -105,7 +105,10 @@ impl ProtocolRegistry {
     /// 3. 对所有 decode 配置的字段执行 pipe
     pub fn parse_url(&self, raw: &str, source: &str) -> Result<NodeContext, ProtocolError> {
         let parsed = url::Url::parse(raw).map_err(|e| {
-            ProtocolError::Io(std::io::Error::new(std::io::ErrorKind::InvalidInput, e.to_string()))
+            ProtocolError::Io(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                e.to_string(),
+            ))
         })?;
 
         let scheme = parsed.scheme().to_string();
@@ -113,9 +116,7 @@ impl ProtocolRegistry {
 
         // url crate 对 IPv6 始终返回带方括号 [::1] 的格式（host_str 和 Host::Display 都是），
         // 但 mihomo 自己也会加括号，导致 [[...]] 双重括号连接失败。手动去掉。
-        let host = parsed.host()
-            .map(|h| h.to_string())
-            .unwrap_or_default();
+        let host = parsed.host().map(|h| h.to_string()).unwrap_or_default();
         let host = host
             .strip_prefix('[')
             .and_then(|s| s.strip_suffix(']'))
@@ -155,7 +156,11 @@ impl ProtocolRegistry {
         }
     }
 
-    fn apply_decode_str(&self, raw: &str, pipe_spec: Option<&String>) -> Result<String, ProtocolError> {
+    fn apply_decode_str(
+        &self,
+        raw: &str,
+        pipe_spec: Option<&String>,
+    ) -> Result<String, ProtocolError> {
         match pipe_spec {
             Some(spec) => {
                 let val = self.pipe_registry.run(raw, spec)?;
@@ -171,15 +176,22 @@ impl ProtocolRegistry {
 
 impl From<PipeError> for ProtocolError {
     fn from(e: PipeError) -> Self {
-        ProtocolError::Io(std::io::Error::new(std::io::ErrorKind::InvalidInput, e.to_string()))
+        ProtocolError::Io(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            e.to_string(),
+        ))
     }
 }
 
 impl Clone for ProtocolDef {
     fn clone(&self) -> Self {
         Self {
-            protocol: ProtocolMeta { schemes: self.protocol.schemes.clone() },
-            decode: DecodeConfig { pipes: self.decode.pipes.clone() },
+            protocol: ProtocolMeta {
+                schemes: self.protocol.schemes.clone(),
+            },
+            decode: DecodeConfig {
+                pipes: self.decode.pipes.clone(),
+            },
         }
     }
 }

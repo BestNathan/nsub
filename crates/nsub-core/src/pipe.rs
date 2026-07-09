@@ -25,22 +25,29 @@ pub enum PipeError {
 
 impl PipeRegistry {
     pub fn new() -> Self {
-        let mut registry = Self { builtins: HashMap::new() };
+        let mut registry = Self {
+            builtins: HashMap::new(),
+        };
 
         // ── 内置 pipe 函数 ──
 
         registry.register("base64", |v| {
             let bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, v)
-                .map_err(|e| PipeError::StepFailed { step: "base64".into(), detail: e.to_string() })?;
+                .map_err(|e| PipeError::StepFailed {
+                    step: "base64".into(),
+                    detail: e.to_string(),
+                })?;
             let s = String::from_utf8(bytes).map_err(|e| PipeError::StepFailed {
-                step: "base64".into(), detail: e.to_string(),
+                step: "base64".into(),
+                detail: e.to_string(),
             })?;
             Ok(Value::String(s))
         });
 
         registry.register("json", |v| {
             serde_json::from_str::<Value>(v).map_err(|e| PipeError::StepFailed {
-                step: "json".into(), detail: e.to_string(),
+                step: "json".into(),
+                detail: e.to_string(),
             })
         });
 
@@ -80,7 +87,11 @@ impl PipeRegistry {
         registry
     }
 
-    pub fn register(&mut self, name: &str, f: impl Fn(&str) -> Result<Value, PipeError> + Send + Sync + 'static) {
+    pub fn register(
+        &mut self,
+        name: &str,
+        f: impl Fn(&str) -> Result<Value, PipeError> + Send + Sync + 'static,
+    ) {
         self.builtins.insert(name.to_string(), Box::new(f));
     }
 
@@ -109,7 +120,10 @@ impl PipeRegistry {
         // 支持 split(<delim>) 泛型
         if step.starts_with("split(") && step.ends_with(')') {
             let delim = &step[6..step.len() - 1];
-            let parts: Vec<Value> = s.split(delim).map(|p| Value::String(p.to_string())).collect();
+            let parts: Vec<Value> = s
+                .split(delim)
+                .map(|p| Value::String(p.to_string()))
+                .collect();
             return Ok(Value::Array(parts));
         }
 

@@ -78,7 +78,7 @@ async fn main() -> Result<()> {
                 println!("协议定义 (protocols/):");
                 for entry in std::fs::read_dir("protocols")? {
                     let entry = entry?;
-                    if entry.path().extension().map_or(false, |e| e == "toml") {
+                    if entry.path().extension().is_some_and(|e| e == "toml") {
                         println!("  {}", entry.file_name().to_string_lossy());
                     }
                 }
@@ -94,8 +94,13 @@ async fn main() -> Result<()> {
                 println!("可用规则 (rules/):");
                 for entry in std::fs::read_dir("rules")? {
                     let entry = entry?;
-                    if entry.path().extension().map_or(false, |e| e == "toml") {
-                        let name = entry.path().file_stem().unwrap().to_string_lossy().to_string();
+                    if entry.path().extension().is_some_and(|e| e == "toml") {
+                        let name = entry
+                            .path()
+                            .file_stem()
+                            .unwrap()
+                            .to_string_lossy()
+                            .to_string();
                         println!("  {name}");
                     }
                 }
@@ -114,7 +119,9 @@ async fn run_convert(args: ConvertArgs) -> Result<()> {
     let registry = ProtocolRegistry::load(&args.protocol_dir)?;
     eprintln!("[nsub] 协议: {} 个", {
         let mut count = 0;
-        for _ in std::fs::read_dir(&args.protocol_dir)? { count += 1; }
+        for _ in std::fs::read_dir(&args.protocol_dir)? {
+            count += 1;
+        }
         count
     });
 
@@ -132,7 +139,10 @@ async fn run_convert(args: ConvertArgs) -> Result<()> {
     let mut all_nodes = Vec::new();
     for source in &args.from {
         let (raw, label) = fetch::fetch(source).await?;
-        eprintln!("[nsub] 拉取: {source} ({} bytes) [label: {label}]", raw.len());
+        eprintln!(
+            "[nsub] 拉取: {source} ({} bytes) [label: {label}]",
+            raw.len()
+        );
 
         for line in raw.lines() {
             let line = line.trim();

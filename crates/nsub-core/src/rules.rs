@@ -72,30 +72,41 @@ impl RuleEngine {
 
         // ── dedup ──
         for rule in &self.config.dedup {
-            let matched: Vec<&NodeContext> =
-                nodes.iter().filter(|n| Self::match_rule(n, &rule.fields)).collect();
+            let matched: Vec<&NodeContext> = nodes
+                .iter()
+                .filter(|n| Self::match_rule(n, &rule.fields))
+                .collect();
             let deduped = Self::apply_dedup(&matched, &rule.fields);
-            results.dedup.insert(rule.name.clone(), NodeGroup {
-                name: rule.name.clone(),
-                nodes: deduped,
-            });
+            results.dedup.insert(
+                rule.name.clone(),
+                NodeGroup {
+                    name: rule.name.clone(),
+                    nodes: deduped,
+                },
+            );
         }
 
         // ── exclude ──
         for rule in &self.config.exclude {
-            let matched: Vec<NodeContext> =
-                nodes.iter().filter(|n| Self::match_rule(n, &rule.fields)).cloned().collect();
-            results.exclude.insert(rule.name.clone(), NodeGroup {
-                name: rule.name.clone(),
-                nodes: matched,
-            });
+            let matched: Vec<NodeContext> = nodes
+                .iter()
+                .filter(|n| Self::match_rule(n, &rule.fields))
+                .cloned()
+                .collect();
+            results.exclude.insert(
+                rule.name.clone(),
+                NodeGroup {
+                    name: rule.name.clone(),
+                    nodes: matched,
+                },
+            );
         }
 
         // ── group ── (先收集所有 exclude 的节点 key，分组时跳过)
         let excluded_keys: std::collections::HashSet<String> = results
             .exclude
             .values()
-            .flat_map(|g| g.nodes.iter().map(|n| Self::node_key(n)))
+            .flat_map(|g| g.nodes.iter().map(Self::node_key))
             .collect();
 
         let mut assigned: Vec<bool> = vec![false; nodes.len()];
@@ -117,24 +128,28 @@ impl RuleEngine {
                 }
             }
 
-            let members: Vec<NodeContext> = member_indices
-                .iter()
-                .map(|&i| nodes[i].clone())
-                .collect();
+            let members: Vec<NodeContext> =
+                member_indices.iter().map(|&i| nodes[i].clone()).collect();
 
-            results.group.insert(g.name.clone(), NodeGroup {
-                name: g.name.clone(),
-                nodes: members,
-            });
+            results.group.insert(
+                g.name.clone(),
+                NodeGroup {
+                    name: g.name.clone(),
+                    nodes: members,
+                },
+            );
         }
 
         // ── pipeline ──
         for pipe in &self.config.pipeline {
             let piped = Self::run_pipeline(&results, &pipe.steps);
-            results.pipeline.insert(pipe.name.clone(), NodeGroup {
-                name: pipe.name.clone(),
-                nodes: piped,
-            });
+            results.pipeline.insert(
+                pipe.name.clone(),
+                NodeGroup {
+                    name: pipe.name.clone(),
+                    nodes: piped,
+                },
+            );
         }
 
         results
@@ -156,17 +171,19 @@ impl RuleEngine {
     /// 从 node 里取出指定字段的值（用于规则匹配）
     fn get_field(node: &NodeContext, field: &str) -> String {
         match field {
-            "scheme"   => node.scheme.clone(),
-            "host"     => node.host.clone(),
-            "port"     => node.port.to_string(),
+            "scheme" => node.scheme.clone(),
+            "host" => node.host.clone(),
+            "port" => node.port.to_string(),
             "fragment" => node.fragment.clone(),
-            "raw"      => node.raw.clone(),
-            "source"   => node.source.clone(),
+            "raw" => node.raw.clone(),
+            "source" => node.source.clone(),
             _ => {
                 // 支持嵌套: "userinfo.net" → node.userinfo["net"]
                 if let Some(rest) = field.strip_prefix("userinfo.") {
                     return match &node.userinfo {
-                        serde_json::Value::Object(map) => map.get(rest).map_or_else(String::new, |v| v.as_str().unwrap_or("").to_string()),
+                        serde_json::Value::Object(map) => map
+                            .get(rest)
+                            .map_or_else(String::new, |v| v.as_str().unwrap_or("").to_string()),
                         _ => String::new(),
                     };
                 }
@@ -223,7 +240,7 @@ impl RuleEngine {
                     // 从当前集合移除被 exclude 的节点
                     if let Some(g) = results.exclude.get(name) {
                         let exclude_set: HashSet<String> =
-                            g.nodes.iter().map(|n| Self::node_key(n)).collect();
+                            g.nodes.iter().map(Self::node_key).collect();
                         nodes.retain(|n| !exclude_set.contains(&Self::node_key(n)));
                     }
                 }
@@ -240,7 +257,7 @@ impl RuleEngine {
                             initialized = true;
                         } else {
                             let step_set: HashSet<String> =
-                                g.nodes.iter().map(|n| Self::node_key(n)).collect();
+                                g.nodes.iter().map(Self::node_key).collect();
                             nodes.retain(|n| step_set.contains(&Self::node_key(n)));
                         }
                     }
@@ -279,7 +296,7 @@ mod tests {
     fn test_dedup_by_host() {
         let nodes = vec![
             make_node("A", "1.2.3.4", 443, "trojan"),
-            make_node("B", "1.2.3.4", 443, "vmess"),   // same host+port → deduped
+            make_node("B", "1.2.3.4", 443, "vmess"), // same host+port → deduped
             make_node("C", "5.6.7.8", 443, "trojan"),
         ];
 
@@ -289,8 +306,9 @@ mod tests {
             name = "main"
             host = ".*"
             port = ".*"
-            "#
-        ).unwrap();
+            "#,
+        )
+        .unwrap();
 
         let engine = RuleEngine::from_config(config);
         let results = engine.run(&nodes);
@@ -321,8 +339,9 @@ mod tests {
 
             [[group]]
             name = "🌍 其他"
-            "#
-        ).unwrap();
+            "#,
+        )
+        .unwrap();
 
         let engine = RuleEngine::from_config(config);
         let results = engine.run(&nodes);
@@ -348,8 +367,9 @@ mod tests {
             name = "hk_vmess"
             fragment = "香港01|HK01"
             scheme = "vmess"
-            "#
-        ).unwrap();
+            "#,
+        )
+        .unwrap();
 
         let engine = RuleEngine::from_config(config);
         let results = engine.run(&nodes);

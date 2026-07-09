@@ -56,10 +56,10 @@ fn source_label(source: &str) -> String {
     }
     // URL: 提取 host
     if source.starts_with("http://") || source.starts_with("https://") {
-        if let Ok(parsed) = url::Url::parse(source) {
-            if let Some(host) = parsed.host_str() {
-                return host.to_string();
-            }
+        if let Ok(parsed) = url::Url::parse(source)
+            && let Some(host) = parsed.host_str()
+        {
+            return host.to_string();
         }
         return source.to_string();
     }
@@ -88,14 +88,11 @@ fn decode_subscription_if_needed(body: &str) -> String {
         return body.to_string();
     }
 
-    match base64_decode(&cleaned) {
-        Ok(decoded) => {
-            // 解码后包含 URL scheme 才采用
-            if decoded.contains("://") {
-                return decoded;
-            }
+    if let Ok(decoded) = base64_decode(&cleaned) {
+        // 解码后包含 URL scheme 才采用
+        if decoded.contains("://") {
+            return decoded;
         }
-        Err(_) => {}
     }
 
     body.to_string()
