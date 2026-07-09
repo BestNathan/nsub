@@ -9,6 +9,7 @@ env:
   CARGO_TERM_COLOR: always
   CARGO_NET_RETRY: "3"
   APP_NAME: nsub
+  HOMEBREW_NO_REQUIRE_TAP_TRUST: "1"
 
 jobs:
   build:
@@ -28,12 +29,12 @@ jobs:
           - target: x86_64-unknown-linux-musl
             os: ubuntu-latest
             suffix: ""
-          # ── macOS (均用 macos-latest ARM runner 交叉编译) ──
+          # ── macOS (均用 macos-15 ARM runner 交叉编译) ──
           - target: x86_64-apple-darwin
-            os: macos-latest
+            os: macos-15
             suffix: ""
           - target: aarch64-apple-darwin
-            os: macos-latest
+            os: macos-15
             suffix: ""
           # ── Windows ──
           - target: x86_64-pc-windows-msvc
