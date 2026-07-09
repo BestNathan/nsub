@@ -3,20 +3,21 @@ set -eu
 
 APP="nsub"
 REPO="BestNathan/nsub"
-INSTALL_DIR="${HOME}/.nsub"
 
-# ── Parse args ──────────────────────────────────────────────────
+# ── Default to XDG user dirs, --global → /usr/local ──────────────
+BIN_DIR="${HOME}/.local/bin"
+SHARE_DIR="${HOME}/.local/share/${APP}"
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --global) INSTALL_DIR="/usr/local" ;;
-        --dir)    INSTALL_DIR="$2"; shift ;;
+        --global) BIN_DIR="/usr/local/bin"; SHARE_DIR="/usr/local/share/${APP}" ;;
         --ver)    VERSION="$2"; shift ;;
-        *) echo "Usage: $0 [--global] [--dir PATH] [--ver vX.Y.Z]"; exit 1 ;;
+        *) echo "Usage: $0 [--global] [--ver vX.Y.Z]"; exit 1 ;;
     esac
     shift
 done
 
-# ── Detect platform ─────────────────────────────────────────────
+# ── Detect platform ───────────────────────────────────────────────
 OS=$(uname -s)
 ARCH=$(uname -m)
 
@@ -39,7 +40,7 @@ case "${OS_GO}-${ARCH_TRIPLE}" in
     darwin-aarch64) TARGET="aarch64-apple-darwin" ;;
 esac
 
-# ── Get version ─────────────────────────────────────────────────
+# ── Get version ───────────────────────────────────────────────────
 if [ -z "${VERSION:-}" ]; then
     echo "→ Fetching latest release..."
     VERSION=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null \
@@ -48,12 +49,10 @@ if [ -z "${VERSION:-}" ]; then
 fi
 
 echo "→ Installing ${APP} ${VERSION} (${TARGET})..."
+echo "→ Binary : ${BIN_DIR}"
+echo "→ Assets : ${SHARE_DIR}"
 
-# ── Download ────────────────────────────────────────────────────
-BIN_DIR="${INSTALL_DIR}/bin"
-SHARE_DIR="${INSTALL_DIR}/share/${APP}"
-mkdir -p "${BIN_DIR}" "${SHARE_DIR}"
-
+# ── Download ──────────────────────────────────────────────────────
 ARCHIVE="${APP}-${TARGET}.tar.gz"
 URL="https://github.com/${REPO}/releases/download/${VERSION}/${ARCHIVE}"
 
@@ -62,46 +61,33 @@ trap 'rm -rf $TMP' EXIT
 
 echo "→ Downloading ${URL}"
 curl -fsSL "$URL" -o "${TMP}/${ARCHIVE}" || {
-    echo "  Failed. Trying gnu target..."
+    echo "  Retry with gnu target..."
     TARGET="x86_64-unknown-linux-gnu"
     ARCHIVE="${APP}-${TARGET}.tar.gz"
     URL="https://github.com/${REPO}/releases/download/${VERSION}/${ARCHIVE}"
     curl -fsSL "$URL" -o "${TMP}/${ARCHIVE}"
 }
 
-# ── Extract ─────────────────────────────────────────────────────
+# ── Extract & install ─────────────────────────────────────────────
 tar xzf "${TMP}/${ARCHIVE}" -C "${TMP}"
 
-# Install the real binary (hidden name)
-cp "${TMP}/${APP}" "${BIN_DIR}/.${APP}-bin" 2>/dev/null || true
-# Windows .exe fallback
-cp "${TMP}/${APP}.exe" "${BIN_DIR}/.${APP}-bin" 2>/dev/null || true
-chmod +x "${BIN_DIR}/.${APP}-bin" 2>/dev/null || true
+install -m 755 "${TMP}/${APP}" "${BIN_DIR}/${APP}"
+cp -r "${TMP}/templates" "${SHARE_DIR}/"
+cp -r "${TMP}/protocols" "${SHARE_DIR}/"
+cp -r "${TMP}/rules" "${SHARE_DIR}/"
+cp -r "${TMP}/functions" "${SHARE_DIR}/" 2>/dev/null || true
 
-# Install assets
-for dir in templates protocols rules functions; do
-    [ -d "${TMP}/${dir}" ] && cp -r "${TMP}/${dir}" "${SHARE_DIR}/"
-done
-
-# ── Create launcher ─────────────────────────────────────────────
-cat > "${BIN_DIR}/${APP}" << EOF
-#!/usr/bin/env bash
-exec "${BIN_DIR}/.${APP}-bin" \\
-    --template-dir "${SHARE_DIR}/templates" \\
-    --protocol-dir "${SHARE_DIR}/protocols" \\
-    --rules-dir "${SHARE_DIR}/rules" \\
-    "\$@"
-EOF
-chmod +x "${BIN_DIR}/${APP}"
-
-# ── Done ────────────────────────────────────────────────────────
+# ── Done ──────────────────────────────────────────────────────────
 echo ""
 echo "✅ ${APP} ${VERSION} installed"
 echo ""
-if ! echo "$PATH" | grep -q "${BIN_DIR}"; then
+echo "   nsub \\
+echo "     --template-dir ${SHARE_DIR}/templates \\"
+echo "     --protocol-dir ${SHARE_DIR}/protocols \\"
+echo "     --rules-dir     ${SHARE_DIR}/rules \\"
+echo "     ..."
+echo ""
+if ! echo "$PATH" | grep -qF "${BIN_DIR}"; then
     echo "   Add to PATH:  export PATH=\"${BIN_DIR}:\$PATH\""
     echo ""
 fi
-echo "   Try: ${BIN_DIR}/${APP} list templates"
-echo "   Try: ${BIN_DIR}/${APP} list rules"
-echo "   Try: ${BIN_DIR}/${APP} list protocols"
