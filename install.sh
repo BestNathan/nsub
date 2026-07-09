@@ -43,9 +43,15 @@ esac
 # ── Get version ───────────────────────────────────────────────────
 if [ -z "${VERSION:-}" ]; then
     echo "→ Fetching latest release..."
+    # Try API first, fall back to git ls-remote
     VERSION=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null \
         | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": *"\(.*\)".*/\1/' || true)
-    [ -z "$VERSION" ] && VERSION="v0.1.0"
+    if [ -z "$VERSION" ]; then
+        VERSION=$(git ls-remote --tags --sort=-version:refname \
+            "https://github.com/${REPO}.git" 'v*' 2>/dev/null \
+            | tail -1 | sed 's/.*refs\/tags\/\(v.*\)/\1/' || true)
+    fi
+    [ -z "$VERSION" ] && { echo "Failed to detect latest version"; exit 1; }
 fi
 
 echo "→ Installing ${APP} ${VERSION} (${TARGET})..."
@@ -60,13 +66,17 @@ TMP=$(mktemp -d)
 trap 'rm -rf $TMP' EXIT
 
 echo "→ Downloading ${URL}"
-curl -fsSL "$URL" -o "${TMP}/${ARCHIVE}" || {
-    echo "  Retry with gnu target..."
+HTTP_CODE=$(curl -fsSL -w "%{http_code}" -o "${TMP}/${ARCHIVE}" "$URL" 2>/dev/null || true)
+if [ "$HTTP_CODE" != "200" ]; then
+    echo "  HTTP ${HTTP_CODE}, retry with gnu target..."
     TARGET="x86_64-unknown-linux-gnu"
     ARCHIVE="${APP}-${TARGET}.tar.gz"
     URL="https://github.com/${REPO}/releases/download/${VERSION}/${ARCHIVE}"
-    curl -fsSL "$URL" -o "${TMP}/${ARCHIVE}"
-}
+    curl -fsSL -o "${TMP}/${ARCHIVE}" "$URL" || {
+        echo "  Failed to download ${APP} ${VERSION} for ${TARGET}"
+        exit 1
+    }
+fi
 
 # ── Extract & install ─────────────────────────────────────────────
 tar xzf "${TMP}/${ARCHIVE}" -C "${TMP}"
