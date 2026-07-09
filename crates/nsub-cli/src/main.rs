@@ -45,17 +45,17 @@ struct ConvertArgs {
     #[arg(short, long, default_value = "simple")]
     rules: String,
 
-    /// 规则目录（默认 ./rules）
-    #[arg(long, default_value = "rules")]
-    rules_dir: PathBuf,
+    /// 规则目录
+    #[arg(long)]
+    rules_dir: Option<PathBuf>,
 
-    /// 协议定义目录（默认 ./protocols）
-    #[arg(long, default_value = "protocols")]
-    protocol_dir: PathBuf,
+    /// 协议定义目录
+    #[arg(long)]
+    protocol_dir: Option<PathBuf>,
 
-    /// 模板目录（默认 ./templates）
-    #[arg(long, default_value = "templates")]
-    template_dir: PathBuf,
+    /// 模板目录
+    #[arg(long)]
+    template_dir: Option<PathBuf>,
 }
 
 #[derive(Subcommand)]
@@ -68,6 +68,30 @@ enum ListArgs {
     Rules,
 }
 
+/// 从二进制位置推导默认 assets 目录
+///
+/// 安装结构:
+///   ~/.local/bin/nsub          ← 二进制
+///   ~/.local/share/nsub/       ← assets (templates/protocols/rules)
+///
+/// 先检查 `../share/nsub/` (相对于二进制), 不存在则回退到 CWD。
+fn default_asset_dir(name: &str) -> PathBuf {
+    if let Ok(exe) = std::env::current_exe()
+        && let Some(bin_dir) = exe.parent()
+    {
+        let share = bin_dir
+            .parent()
+            .unwrap_or(bin_dir)
+            .join("share")
+            .join("nsub")
+            .join(name);
+        if share.is_dir() {
+            return share;
+        }
+    }
+    PathBuf::from(name)
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -75,8 +99,9 @@ async fn main() -> Result<()> {
     match cli.command {
         Command::List(args) => match args {
             ListArgs::Protocols => {
-                println!("协议定义 (protocols/):");
-                for entry in std::fs::read_dir("protocols")? {
+                let dir = default_asset_dir("protocols");
+                println!("协议定义 ({}):", dir.display());
+                for entry in std::fs::read_dir(&dir)? {
                     let entry = entry?;
                     if entry.path().extension().is_some_and(|e| e == "toml") {
                         println!("  {}", entry.file_name().to_string_lossy());
@@ -84,15 +109,17 @@ async fn main() -> Result<()> {
                 }
             }
             ListArgs::Templates => {
-                let renderer = Renderer::load("templates")?;
+                let dir = default_asset_dir("templates");
+                let renderer = Renderer::load(&dir)?;
                 println!("可用模板:");
                 for t in renderer.list_templates() {
                     println!("  {t}");
                 }
             }
             ListArgs::Rules => {
-                println!("可用规则 (rules/):");
-                for entry in std::fs::read_dir("rules")? {
+                let dir = default_asset_dir("rules");
+                println!("可用规则 ({}):", dir.display());
+                for entry in std::fs::read_dir(&dir)? {
                     let entry = entry?;
                     if entry.path().extension().is_some_and(|e| e == "toml") {
                         let name = entry
@@ -115,24 +142,32 @@ async fn main() -> Result<()> {
 }
 
 async fn run_convert(args: ConvertArgs) -> Result<()> {
+    let protocol_dir = args
+        .protocol_dir
+        .unwrap_or_else(|| default_asset_dir("protocols"));
+    let rules_dir = args.rules_dir.unwrap_or_else(|| default_asset_dir("rules"));
+    let template_dir = args
+        .template_dir
+        .unwrap_or_else(|| default_asset_dir("templates"));
+
     // 1. 加载协议定义
-    let registry = ProtocolRegistry::load(&args.protocol_dir)?;
+    let registry = ProtocolRegistry::load(&protocol_dir)?;
     eprintln!("[nsub] 协议: {} 个", {
         let mut count = 0;
-        for _ in std::fs::read_dir(&args.protocol_dir)? {
+        for _ in std::fs::read_dir(&protocol_dir)? {
             count += 1;
         }
         count
     });
 
     // 2. 加载规则
-    let rules_path = args.rules_dir.join(format!("{}.toml", args.rules));
+    let rules_path = rules_dir.join(format!("{}.toml", args.rules));
     let rules_content = std::fs::read_to_string(&rules_path)?;
     let rules_config: nsub_core::rules::RulesConfig = toml::from_str(&rules_content)?;
     let rule_engine = RuleEngine::from_config(rules_config);
 
     // 3. 加载模板
-    let renderer = Renderer::load(&args.template_dir)?;
+    let renderer = Renderer::load(&template_dir)?;
     eprintln!("[nsub] 模板: {} 个", renderer.list_templates().len());
 
     // 4. 拉取订阅 → 解析每个 URI
