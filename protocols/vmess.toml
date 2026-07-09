@@ -1,0 +1,11 @@
+# VMess 协议定义
+#
+# URL 格式: vmess://base64(json)#name
+# userinfo base64 解码后是 JSON 对象
+
+[protocol]
+schemes = ["vmess", "vmess1"]
+
+[decode]
+userinfo = "base64 | json"
+fragment = "urldecode"

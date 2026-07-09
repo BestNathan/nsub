@@ -1,0 +1,4 @@
+# 用户自定义 pipe 函数 (Rhai 脚本)
+# 例:
+#   fn hello(input) { "Hello, " + input }
+# 在协议定义里: userinfo = "base64 | json | hello"

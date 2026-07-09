@@ -1,0 +1,10 @@
+# Trojan 协议定义
+#
+# URL 格式: trojan://password@host:port?query#name
+# userinfo 就是密码，无需 decode
+
+[protocol]
+schemes = ["trojan"]
+
+[decode]
+fragment = "urldecode"

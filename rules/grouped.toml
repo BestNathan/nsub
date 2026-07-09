@@ -1,0 +1,53 @@
+# rules/grouped.toml — 按地区分组
+
+[[dedup]]
+name = "main"
+host = ".*"
+port = ".*"
+
+[[exclude]]
+name = "ad"
+fragment = "超过20多个|客户端设置|电报群|防失联|剩余流量|套餐到期|每次使用前|https?://"
+
+[[exclude]]
+name = "placeholder"
+host = "1\\.1\\.1\\.1|2\\.2\\.2\\.2"
+
+[[group]]
+name = "🇸🇬 新加坡"
+fragment = "新加坡|新加"
+
+[[group]]
+name = "🇹🇼 台湾"
+fragment = "台湾|台"
+
+[[group]]
+name = "🇯🇵 日本"
+fragment = "日本"
+
+[[group]]
+name = "🇺🇸 美国"
+fragment = "美国"
+
+[[group]]
+name = "🌍 其他"
+
+[[pipeline]]
+name = "🇸🇬 新加坡"
+steps = ["group.🇸🇬 新加坡", "dedup.main", "exclude.ad", "exclude.placeholder"]
+
+[[pipeline]]
+name = "🇹🇼 台湾"
+steps = ["group.🇹🇼 台湾", "dedup.main", "exclude.ad", "exclude.placeholder"]
+
+[[pipeline]]
+name = "🇯🇵 日本"
+steps = ["group.🇯🇵 日本", "dedup.main", "exclude.ad", "exclude.placeholder"]
+
+[[pipeline]]
+name = "🇺🇸 美国"
+steps = ["group.🇺🇸 美国", "dedup.main", "exclude.ad", "exclude.placeholder"]
+
+[[pipeline]]
+name = "🌍 其他"
+steps = ["group.🌍 其他", "dedup.main", "exclude.ad", "exclude.placeholder"]

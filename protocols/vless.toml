@@ -1,0 +1,10 @@
+# VLESS 协议定义
+#
+# URL 格式: vless://uuid@host:port?query#name
+# userinfo 就是 uuid
+
+[protocol]
+schemes = ["vless"]
+
+[decode]
+fragment = "urldecode"

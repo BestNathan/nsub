@@ -1,0 +1,9 @@
+# TUIC v5 协议定义
+#
+# URL 格式: tuic://uuid:password@host:port?query#name
+
+[protocol]
+schemes = ["tuic"]
+
+[decode]
+fragment = "urldecode"

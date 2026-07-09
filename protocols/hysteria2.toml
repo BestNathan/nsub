@@ -1,0 +1,10 @@
+# Hysteria2 协议定义
+#
+# URL 格式: hysteria2://password@host:port?query#name
+# 也支持 hy2:// 别名
+
+[protocol]
+schemes = ["hysteria2", "hy2"]
+
+[decode]
+fragment = "urldecode"

@@ -1,0 +1,11 @@
+# Shadowsocks 协议定义
+#
+# URL 格式: ss://base64(method:password)@host:port#name
+# userinfo base64 解码后按 : 切开为 [cipher, password]
+
+[protocol]
+schemes = ["ss"]
+
+[decode]
+userinfo = "base64 | split(:)"
+fragment = "urldecode"
