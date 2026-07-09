@@ -7,6 +7,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  CARGO_NET_RETRY: "3"
   APP_NAME: nsub
 
 jobs:
@@ -14,6 +15,7 @@ jobs:
     name: Build ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           # ── Linux ──
@@ -28,7 +30,7 @@ jobs:
             suffix: ""
           # ── macOS ──
           - target: x86_64-apple-darwin
-            os: macos-latest
+            os: macos-13
             suffix: ""
           - target: aarch64-apple-darwin
             os: macos-latest
@@ -41,18 +43,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           targets: ${{ matrix.target }}
-
-      - uses: Swatinem/rust-cache@v2
+          cache-workspaces: "."
+          cache-all-crates: "true"
 
       - name: Install cross-compile deps (Linux ARM64)
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu qemu-user
+          sudo apt-get install -y gcc-aarch64-linux-gnu
           echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
 
       - name: Install musl tools
@@ -105,21 +106,15 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Flatten artifact files
+      - name: Flatten and checksum
         run: |
           mkdir -p release
           find artifacts -type f \( -name '*.tar.gz' -o -name '*.zip' \) -exec cp {} release/ \;
-          ls -lh release/
-
-      - name: Generate checksums
-        run: |
           cd release
           sha256sum * > checksums.txt
           cat checksums.txt
