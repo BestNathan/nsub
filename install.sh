@@ -43,7 +43,6 @@ esac
 # ── Get version ───────────────────────────────────────────────────
 if [ -z "${VERSION:-}" ]; then
     echo "→ Fetching latest release..."
-    # Try API first, fall back to git ls-remote
     VERSION=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null \
         | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": *"\(.*\)".*/\1/' || true)
     if [ -z "$VERSION" ]; then
@@ -92,16 +91,20 @@ for dir in templates protocols rules functions; do
 done
 
 # ── Done ──────────────────────────────────────────────────────────
-echo ""
-echo "✅ ${APP} ${VERSION} installed"
-echo ""
-echo "   nsub \\
-echo "     --template-dir ${SHARE_DIR}/templates \\"
-echo "     --protocol-dir ${SHARE_DIR}/protocols \\"
-echo "     --rules-dir     ${SHARE_DIR}/rules \\"
-echo "     ..."
-echo ""
+cat <<EOF
+
+✅ ${APP} ${VERSION} installed
+
+   nsub \\
+     --template-dir ${SHARE_DIR}/templates \\
+     --protocol-dir ${SHARE_DIR}/protocols \\
+     --rules-dir     ${SHARE_DIR}/rules \\
+     ...
+EOF
 if ! echo "$PATH" | grep -qF "${BIN_DIR}"; then
-    echo "   Add to PATH:  export PATH=\"${BIN_DIR}:\$PATH\""
-    echo ""
+    cat <<EOF
+
+   Add to PATH:  export PATH="${BIN_DIR}:\$PATH"
+EOF
 fi
+echo
