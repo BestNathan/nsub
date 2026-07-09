@@ -131,15 +131,15 @@ async fn run_convert(args: ConvertArgs) -> Result<()> {
     // 4. 拉取订阅 → 解析每个 URI
     let mut all_nodes = Vec::new();
     for source in &args.from {
-        let raw = fetch::fetch(source).await?;
-        eprintln!("[nsub] 拉取: {source} ({} bytes)", raw.len());
+        let (raw, label) = fetch::fetch(source).await?;
+        eprintln!("[nsub] 拉取: {source} ({} bytes) [label: {label}]", raw.len());
 
         for line in raw.lines() {
             let line = line.trim();
             if line.is_empty() || line.starts_with('#') {
                 continue;
             }
-            match registry.parse_url(line) {
+            match registry.parse_url(line, &label) {
                 Ok(node) => all_nodes.push(node),
                 Err(e) => eprintln!("[nsub] skip: {e}"),
             }

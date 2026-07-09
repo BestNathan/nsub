@@ -27,6 +27,8 @@ pub struct NodeContext {
     pub fragment: String,
     /// 原始 URL 字符串
     pub raw: String,
+    /// 订阅来源（URL host 或文件名），用于按订阅分组
+    pub source: String,
 }
 
 /// 规则引擎产出的所有结果，模板里按 name 索引。

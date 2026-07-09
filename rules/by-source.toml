@@ -1,0 +1,30 @@
+# rules/by-source.toml — 按订阅来源去重分组
+
+[[dedup]]
+name = "feiniao"
+source = "test_sub\\.txt"
+host = ".*"
+port = ".*"
+
+[[dedup]]
+name = "jiasuqi"
+source = "jsjc\\.cfd"
+host = ".*"
+port = ".*"
+
+[[exclude]]
+name = "ad"
+fragment = "超过20多个|客户端设置|电报群|防失联|剩余流量|套餐到期|每次使用前|https?://"
+
+[[exclude]]
+name = "placeholder"
+host = "1\\.1\\.1\\.1|2\\.2\\.2\\.2"
+
+# 每个订阅独立管道: 去重 → 过滤
+[[pipeline]]
+name = "🐦 飞鸟云"
+steps = ["dedup.feiniao", "exclude.ad", "exclude.placeholder"]
+
+[[pipeline]]
+name = "🚀 加速器"
+steps = ["dedup.jiasuqi", "exclude.ad", "exclude.placeholder"]

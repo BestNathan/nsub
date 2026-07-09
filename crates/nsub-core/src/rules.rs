@@ -91,7 +91,13 @@ impl RuleEngine {
             });
         }
 
-        // ── group ──
+        // ── group ── (先收集所有 exclude 的节点 key，分组时跳过)
+        let excluded_keys: std::collections::HashSet<String> = results
+            .exclude
+            .values()
+            .flat_map(|g| g.nodes.iter().map(|n| Self::node_key(n)))
+            .collect();
+
         let mut assigned: Vec<bool> = vec![false; nodes.len()];
         for g in &self.config.group {
             let is_catch_all = g.fields.is_empty();
@@ -99,6 +105,10 @@ impl RuleEngine {
             let mut member_indices: Vec<usize> = Vec::new();
             for (i, n) in nodes.iter().enumerate() {
                 if assigned[i] {
+                    continue;
+                }
+                // 跳过被 exclude 命中的节点
+                if excluded_keys.contains(&Self::node_key(n)) {
                     continue;
                 }
                 if is_catch_all || Self::match_rule(n, &g.fields) {
@@ -151,6 +161,7 @@ impl RuleEngine {
             "port"     => node.port.to_string(),
             "fragment" => node.fragment.clone(),
             "raw"      => node.raw.clone(),
+            "source"   => node.source.clone(),
             _ => {
                 // 支持嵌套: "userinfo.net" → node.userinfo["net"]
                 if let Some(rest) = field.strip_prefix("userinfo.") {
@@ -260,6 +271,7 @@ mod tests {
             query: HashMap::new(),
             fragment: fragment.to_string(),
             raw: format!("{scheme}://user@{host}:{port}#{fragment}"),
+            source: "test".to_string(),
         }
     }
 
@@ -319,7 +331,7 @@ mod tests {
         assert_eq!(results.exclude["dead"].nodes[0].fragment, "免费节点");
 
         assert_eq!(results.group["🇭🇰 香港"].nodes.len(), 2);
-        assert_eq!(results.group["🌍 其他"].nodes.len(), 1); // 免费节点（不匹配香港）被兜底组收容
+        assert_eq!(results.group["🌍 其他"].nodes.len(), 0); // 免费节点被 exclude 过滤，兜底组空了
     }
 
     #[test]

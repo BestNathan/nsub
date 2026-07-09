@@ -103,7 +103,7 @@ impl ProtocolRegistry {
     /// 1. 解析 URL 各部件
     /// 2. 匹配 scheme → 找到协议定义
     /// 3. 对所有 decode 配置的字段执行 pipe
-    pub fn parse_url(&self, raw: &str) -> Result<NodeContext, ProtocolError> {
+    pub fn parse_url(&self, raw: &str, source: &str) -> Result<NodeContext, ProtocolError> {
         let parsed = url::Url::parse(raw).map_err(|e| {
             ProtocolError::Io(std::io::Error::new(std::io::ErrorKind::InvalidInput, e.to_string()))
         })?;
@@ -111,7 +111,16 @@ impl ProtocolRegistry {
         let scheme = parsed.scheme().to_string();
         let proto = self.find(&scheme)?;
 
-        let host = parsed.host_str().unwrap_or("").to_string();
+        // url crate 对 IPv6 始终返回带方括号 [::1] 的格式（host_str 和 Host::Display 都是），
+        // 但 mihomo 自己也会加括号，导致 [[...]] 双重括号连接失败。手动去掉。
+        let host = parsed.host()
+            .map(|h| h.to_string())
+            .unwrap_or_default();
+        let host = host
+            .strip_prefix('[')
+            .and_then(|s| s.strip_suffix(']'))
+            .unwrap_or(&host)
+            .to_string();
         let port = parsed.port().unwrap_or(443);
         let fragment = percent_decode(parsed.fragment().unwrap_or(""));
         let userinfo_raw = percent_decode(parsed.username()); // note: url crate 把 userinfo 放 username
@@ -135,6 +144,7 @@ impl ProtocolRegistry {
             query,
             fragment: fragment.as_str().map_or_else(String::new, String::from),
             raw: raw.to_string(),
+            source: source.to_string(),
         })
     }
 
