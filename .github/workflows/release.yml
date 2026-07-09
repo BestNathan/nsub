@@ -41,7 +41,7 @@ jobs:
             suffix: ".exe"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -96,7 +96,7 @@ jobs:
           Compress-Archive -Path dist\* -DestinationPath ${{ env.APP_NAME }}-${{ matrix.target }}.zip
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.APP_NAME }}-${{ matrix.target }}
           path: ${{ env.APP_NAME }}-${{ matrix.target }}.*
@@ -109,7 +109,7 @@ jobs:
       contents: write
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
 
@@ -122,7 +122,7 @@ jobs:
           cat checksums.txt
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: release/*
           generate_release_notes: true
