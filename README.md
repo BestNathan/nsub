@@ -9,13 +9,13 @@
 ## 安装
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/BestNathan/nsub/main/install.sh | bash
+curl -fsSL https://github.com/BestNathan/nsub/releases/latest/download/install.sh | bash
 ```
 
 或指定全局安装：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/BestNathan/nsub/main/install.sh | bash -s -- --global
+curl -fsSL https://github.com/BestNathan/nsub/releases/latest/download/install.sh | bash -s -- --global
 ```
 
 ## 快速开始

@@ -109,15 +109,18 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v7
+
       - name: Download all artifacts
         uses: actions/download-artifact@v8
         with:
           path: artifacts
 
-      - name: Flatten and checksum
+      - name: Flatten, add install.sh, and checksum
         run: |
           mkdir -p release
           find artifacts -type f \( -name '*.tar.gz' -o -name '*.zip' \) -exec cp {} release/ \;
+          cp install.sh release/
           cd release
           sha256sum * > checksums.txt
           cat checksums.txt
