@@ -49,7 +49,11 @@ if [ -z "${VERSION:-}" ]; then
     if [ -z "$VERSION" ]; then
         VERSION=$(git ls-remote --tags --sort=-version:refname \
             "https://github.com/${REPO}.git" 'v*' 2>/dev/null \
-            | tail -1 | sed 's/.*refs\/tags\/\(v.*\)/\1/' || true)
+            | head -1 | sed 's/.*refs\/tags\/\(v.*\)/\1/' || true)
+    fi
+    if [ -z "$VERSION" ]; then
+        VERSION=$(git ls-remote --tags "https://github.com/${REPO}.git" 'v*' 2>/dev/null \
+            | sed 's/.*refs\/tags\/\(v.*\)/\1/' | sort -Vr | head -1 || true)
     fi
     [ -z "$VERSION" ] && { echo "Failed to detect latest version"; exit 1; }
 fi
@@ -81,11 +85,11 @@ fi
 # ── Extract & install ─────────────────────────────────────────────
 tar xzf "${TMP}/${ARCHIVE}" -C "${TMP}"
 
-install -m 755 "${TMP}/${APP}" "${BIN_DIR}/${APP}"
-cp -r "${TMP}/templates" "${SHARE_DIR}/"
-cp -r "${TMP}/protocols" "${SHARE_DIR}/"
-cp -r "${TMP}/rules" "${SHARE_DIR}/"
-cp -r "${TMP}/functions" "${SHARE_DIR}/" 2>/dev/null || true
+cp "${TMP}/${APP}" "${BIN_DIR}/${APP}"
+chmod +x "${BIN_DIR}/${APP}"
+for dir in templates protocols rules functions; do
+    [ -d "${TMP}/${dir}" ] && cp -r "${TMP}/${dir}" "${SHARE_DIR}/"
+done
 
 # ── Done ──────────────────────────────────────────────────────────
 echo ""
