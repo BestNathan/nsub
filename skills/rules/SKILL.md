@@ -196,3 +196,7 @@ steps = ["dedup.main"]
 使用：`nsub convert -f sub.txt -t clash/simple -r myrule`
 
 不需要改任何 Rust 代码。
+
+---
+
+> 需要帮助？[提 Issue](https://github.com/BestNathan/nsub/issues/new?labels=rule&template=rule.yml)

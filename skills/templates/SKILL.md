@@ -208,3 +208,7 @@ templates/
 引擎自动按 `node.scheme` 匹配文件，**不需要修改任何其他文件**。
 
 Surge 同理：`templates/surge/proxy/myproto.tpl`。
+
+---
+
+> 需要帮助？[提 Issue](https://github.com/BestNathan/nsub/issues/new?labels=template&template=template.yml)

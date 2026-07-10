@@ -142,3 +142,7 @@ fragment = "urldecode"
 ```
 
 然后加对应的模板片段（见 **templates** skill）。不需要改任何 Rust 代码。
+
+---
+
+> 需要帮助？[提 Issue](https://github.com/BestNathan/nsub/issues/new?labels=protocol&template=protocol.yml)

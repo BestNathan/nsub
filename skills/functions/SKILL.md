@@ -128,3 +128,7 @@ userinfo = "base64 | my_transform"
 ```
 
 不需要改任何 Rust 代码。
+
+---
+
+> 需要帮助？[提 Issue](https://github.com/BestNathan/nsub/issues/new?labels=protocol&template=protocol.yml)
