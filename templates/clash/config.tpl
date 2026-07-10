@@ -14,7 +14,7 @@ log-level: info
 proxies:
 {% for pipe_name, p in pipeline %}
 {% for node in p.nodes %}
-{% include "clash/proxy.tpl" %}
+{{ node.proxy }}
 {% endfor %}
 {% endfor %}
 

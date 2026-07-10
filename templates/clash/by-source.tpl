@@ -16,7 +16,7 @@ proxies:
 {% for pipe_name, p in pipeline %}
 # ── {{ p.name }} ({{ p.nodes | length }} 个节点) ──
 {% for node in p.nodes %}
-{% include "clash/proxy.tpl" %}
+{{ node.proxy }}
 {% endfor %}
 {% endfor %}
 

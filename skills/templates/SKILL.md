@@ -122,11 +122,35 @@ server: "{{ node.userinfo.add | default(value=node.host) }}"
 {% endif %}
 ```
 
-## 单条 Proxy 模板 (proxy.tpl)
+## 单条 Proxy 模板 (proxy/<scheme>.tpl)
 
-这是被所有模板 include 的核心片段。每个协议类型一个 `elif` 分支：
+每个协议的 proxy 配置独立存放在 `proxy/` 子目录，按 `node.scheme` 自动匹配。
+模板里直接用 `{{ node.proxy }}` 输出预渲染好的 proxy 配置，**不需要写分发逻辑**。
+
+### Clash 单条 proxy 模板 (`proxy/vmess.tpl`)
 
 ```django
+- name: {{ node.fragment | default(value=node.host) }}
+  type: vmess
+  server: "{{ node.userinfo.add | default(value=node.host) }}"
+  port: {{ node.userinfo.port | default(value=node.port) }}
+  uuid: {{ node.userinfo.id }}
+  alterId: {{ node.userinfo.aid | default(value=0) }}
+  cipher: auto
+```
+
+### 主模板里怎么用
+
+```django
+proxies:
+{% for p in pipeline %}
+{% for node in p.nodes %}
+{{ node.proxy }}          {# 自动选择 proxy/<scheme>.tpl 渲染 #}
+{% endfor %}
+{% endfor %}
+```
+
+`node` 的其他字段（`fragment`, `host`, `source` 等）依然可以直接访问，用于 proxy-groups 等场景。
 {% if node.scheme == "vmess" %}
 - name: {{ node.fragment }}
   type: vmess
@@ -171,7 +195,7 @@ templates/
 
 ### 新增 proxy 协议支持
 
-1. 创建 `templates/clash/proxy/myproto.tpl`：
+只需加一个文件 `templates/clash/proxy/myproto.tpl`：
 
 ```django
 - name: {{ node.fragment }}
@@ -181,13 +205,6 @@ templates/
   password: {{ node.userinfo }}
 ```
 
-2. 在 `templates/clash/proxy.tpl` 分发器里加一行：
+引擎自动按 `node.scheme` 匹配文件，**不需要修改任何其他文件**。
 
-```django
-{% elif node.scheme == "myproto" %}
-{% include "clash/proxy/myproto.tpl" %}
-```
-
-3. Surge 同理：`templates/surge/proxy/myproto.tpl` + 分发器加 `elif`。
-
-不需要改任何 Rust 代码。
+Surge 同理：`templates/surge/proxy/myproto.tpl`。

@@ -6,7 +6,7 @@ loglevel = notify
 {% for group_name, g in group %}
 {#- ── {{ group_name }} ── #}
 {% for node in g.nodes %}
-{% include "surge/proxy.tpl" %}
+{{ node.proxy }}
 {% endfor %}
 {% endfor %}
 

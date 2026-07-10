@@ -6,7 +6,7 @@ log-level: info
 
 proxies:
 {% for node in pipeline["all"].nodes %}
-{% include "clash/proxy.tpl" %}
+{{ node.proxy }}
 {% endfor %}
 
 proxy-groups:
