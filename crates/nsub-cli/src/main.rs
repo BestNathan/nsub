@@ -118,6 +118,8 @@ async fn main() -> Result<()> {
                         println!("  {}", entry.file_name().to_string_lossy());
                     }
                 }
+                println!();
+                println!("扩展协议: nsub skills protocols");
             }
             ListArgs::Templates => {
                 let dir = default_asset_dir("templates");
@@ -126,6 +128,8 @@ async fn main() -> Result<()> {
                 for t in renderer.list_templates() {
                     println!("  {t}");
                 }
+                println!();
+                println!("扩展模板: nsub skills templates");
             }
             ListArgs::Rules => {
                 let dir = default_asset_dir("rules");
@@ -142,6 +146,8 @@ async fn main() -> Result<()> {
                         println!("  {name}");
                     }
                 }
+                println!();
+                println!("扩展规则: nsub skills rules");
             }
         },
         Command::Skills(args) => {
@@ -196,7 +202,11 @@ async fn main() -> Result<()> {
                         }
                     }
                     println!();
-                    println!("使用 `nsub skills <name>` 查看详细内容");
+                    println!("示例:");
+                    println!("  nsub skills protocols   # 如何定义新协议的解析规则");
+                    println!("  nsub skills templates   # 如何写模板控制输出格式");
+                    println!("  nsub skills rules       # 如何用规则引擎去重/过滤/分组");
+                    println!("  nsub skills functions   # 如何用 Rhai 扩展 pipe 函数");
                 }
             }
         }
