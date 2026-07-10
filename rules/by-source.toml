@@ -14,7 +14,12 @@ port = ".*"
 
 [[exclude]]
 name = "ad"
-fragment = "超过20多个|客户端设置|电报群|防失联|剩余流量|套餐到期|每次使用前|https?://"
+fragment = "超过20多个|客户端设置|电报群|防失联|每次使用前|https?://"
+
+# ── 订阅信息 ──
+[[group]]
+name = "📊 订阅信息"
+fragment = "剩余流量|套餐到期|下次重置|距离下次"
 
 [[exclude]]
 name = "placeholder"

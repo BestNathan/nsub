@@ -1,4 +1,4 @@
-# rules/simple.toml — 极简: 去重 + 过滤 → 全部有效节点
+# rules/simple.toml — 去重 + 过滤 + 订阅信息
 
 [[dedup]]
 name = "main"
@@ -7,11 +7,16 @@ port = ".*"
 
 [[exclude]]
 name = "ad"
-fragment = "超过20多个|客户端设置|电报群|防失联|剩余流量|套餐到期|每次使用前|https?://"
+fragment = "超过20多个|客户端设置|电报群|防失联|每次使用前|https?://"
 
 [[exclude]]
 name = "placeholder"
 host = "1\\.1\\.1\\.1|2\\.2\\.2\\.2"
+
+# ── 订阅信息（剩余流量、到期时间等）──
+[[group]]
+name = "📊 订阅信息"
+fragment = "剩余流量|套餐到期|下次重置|距离下次"
 
 # 管道: 去重 → 过滤广告
 [[pipeline]]

@@ -6,6 +6,9 @@
 {% endif %}
 {% endfor %}
 
+{% for gname, g in group %}{% if g.nodes | length > 0 %}{% for node in g.nodes %}
+# {{ g.name }}: {{ node.fragment }}
+{% endfor %}{% endif %}{% endfor %}
 mixed-port: 7890
 allow-lan: true
 mode: rule
