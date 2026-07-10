@@ -22,7 +22,9 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum ProtocolError {
-    #[error("unknown scheme: {0} — 查看 nsub skills protocols 了解如何添加协议支持")]
+    #[error(
+        "unknown scheme: {0} — nsub skills protocols | https://github.com/BestNathan/nsub/issues/new?labels=protocol&template=protocol.yml"
+    )]
     UnknownScheme(String),
     #[error("load protocol config: {0}")]
     ConfigError(#[from] toml::de::Error),

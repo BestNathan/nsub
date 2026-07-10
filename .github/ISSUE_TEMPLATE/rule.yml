@@ -1,0 +1,24 @@
+name: Rule 规则增强
+description: 请求添加新的规则分组或改进规则引擎
+title: "[Rule] "
+labels: ["rule"]
+body:
+  - type: input
+    id: use-case
+    attributes:
+      label: 使用场景
+      placeholder: 如：按运营商分组、按延迟分组
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+      description: 期望规则如何工作
+    validations:
+      required: true
+  - type: textarea
+    id: example-rules
+    attributes:
+      label: 示例配置
+      description: 如果已有例子，请分享

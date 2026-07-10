@@ -1,0 +1,39 @@
+name: Protocol 协议支持
+description: 请求添加新协议的解析支持
+title: "[Protocol] "
+labels: ["protocol"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: 协议名称
+      placeholder: 如 myproto
+    validations:
+      required: true
+  - type: textarea
+    id: url-format
+    attributes:
+      label: URL 格式
+      description: 协议 URL 的完整格式
+      placeholder: |
+        myproto://userinfo@host:port?param1=val1&param2=val2#节点名称
+    validations:
+      required: true
+  - type: textarea
+    id: clash-config
+    attributes:
+      label: Clash/Mihomo 配置格式
+      description: 该协议在 Clash 配置中的 YAML 格式（如已知）
+      placeholder: |
+        - name: 节点名
+          type: myproto
+          server: 1.2.3.4
+          port: 443
+          password: xxx
+  - type: textarea
+    id: example-url
+    attributes:
+      label: 示例 URL
+      description: 提供一个示例订阅 URL（可脱敏）
+    validations:
+      required: true

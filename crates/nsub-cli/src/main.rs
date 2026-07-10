@@ -215,6 +215,9 @@ async fn main() -> Result<()> {
                     println!("  nsub skills templates   # 如何写模板控制输出格式");
                     println!("  nsub skills rules       # 如何用规则引擎去重/过滤/分组");
                     println!("  nsub skills functions   # 如何用 Rhai 扩展 pipe 函数");
+                    println!();
+                    println!("需要新协议/模板支持？提 Issue:");
+                    println!("  https://github.com/BestNathan/nsub/issues/new/choose");
                 }
             }
         }

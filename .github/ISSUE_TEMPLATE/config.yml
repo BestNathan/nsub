@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 查看扩展指南
+    url: https://github.com/BestNathan/nsub/blob/main/skills/protocols/SKILL.md
+    about: 如何自己添加协议支持（不需要改代码）
+  - name: 模板扩展指南
+    url: https://github.com/BestNathan/nsub/blob/main/skills/templates/SKILL.md
+    about: 如何自己添加新模板（不需要改代码）

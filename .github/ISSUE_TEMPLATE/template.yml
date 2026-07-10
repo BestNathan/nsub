@@ -1,0 +1,26 @@
+name: Template 模板支持
+description: 请求添加新客户端/输出格式的模板
+title: "[Template] "
+labels: ["template"]
+body:
+  - type: input
+    id: client
+    attributes:
+      label: 客户端名称
+      placeholder: 如 Quantumult X, Surfboard, Shadowrocket
+    validations:
+      required: true
+  - type: textarea
+    id: config-format
+    attributes:
+      label: 配置格式
+      description: 目标配置文件的格式示例
+      placeholder: |
+        期望生成的配置文件长什么样？
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: 补充说明
+      description: 其他有用的信息（文档链接、示例配置等）
