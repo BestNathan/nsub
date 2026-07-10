@@ -9,13 +9,22 @@
 ```
 templates/
   clash/
-    proxy.tpl         ← 单条代理节点（被其他模板 include）
+    proxy.tpl         ← 分发器：按 scheme include 子模板
+    proxy/
+      vmess.tpl       ← VMess 单条节点
+      vless.tpl       ← VLESS (reality / tls+ws)
+      ss.tpl          ← Shadowsocks
+      trojan.tpl      ← Trojan
+      hysteria2.tpl   ← Hysteria2 / hy2
+      tuic.tpl        ← TUIC
+      hy2.tpl         ← hysteria2 别名
     simple.tpl        ← 全节点 round-robin
     grouped.tpl       ← 按 GEOIP 分组
     by-source.tpl     ← 按订阅来源分组
     config.tpl        ← 域名规则路由
   surge/
-    proxy.tpl         ← Surge 单条节点
+    proxy.tpl         ← 分发器
+    proxy/            ← (同上结构)
     config.tpl        ← Surge 完整配置
   node/
     config.tpl        ← 纯节点列表（调试用）
@@ -162,16 +171,23 @@ templates/
 
 ### 新增 proxy 协议支持
 
-编辑 `templates/clash/proxy.tpl`，在末尾加一个新的 `elif`：
+1. 创建 `templates/clash/proxy/myproto.tpl`：
 
 ```django
-{% elif node.scheme == "myproto" %}
 - name: {{ node.fragment }}
   type: myproto
   server: "{{ node.host }}"
   port: {{ node.port }}
   password: {{ node.userinfo }}
-{% endif %}
 ```
+
+2. 在 `templates/clash/proxy.tpl` 分发器里加一行：
+
+```django
+{% elif node.scheme == "myproto" %}
+{% include "clash/proxy/myproto.tpl" %}
+```
+
+3. Surge 同理：`templates/surge/proxy/myproto.tpl` + 分发器加 `elif`。
 
 不需要改任何 Rust 代码。

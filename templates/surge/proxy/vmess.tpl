@@ -1,0 +1,1 @@
+{{ node.fragment | default(value=node.userinfo.add) }} = vmess, {{ node.userinfo.add | default(value=node.host) }}, {{ node.userinfo.port | default(value=node.port) }}, username={{ node.userinfo.id }}{% if node.userinfo.net == "ws" %}, ws=true{% endif %}{% if node.userinfo.tls == "tls" %}, tls=true{% endif %}
