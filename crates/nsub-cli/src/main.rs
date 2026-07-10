@@ -12,7 +12,11 @@ use nsub_core::{fetch, protocol::ProtocolRegistry, render::Renderer, rules::Rule
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(name = "nsub", about = "订阅转换工具 — URL → Node → 配置")]
+#[command(
+    name = "nsub",
+    about = "订阅转换工具 — URL → Node → 配置",
+    after_help = "扩展指南: nsub skills  查看如何添加协议、模板、规则"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -21,11 +25,15 @@ struct Cli {
 #[derive(Subcommand)]
 enum Command {
     /// 执行订阅转换
+    #[command(after_help = "提示: nsub skills  查看如何定义协议、模板、规则")]
     Convert(ConvertArgs),
     /// 列出可用资源
     #[command(subcommand)]
     List(ListArgs),
     /// 查看扩展指南 (protocols, templates, rules, functions)
+    #[command(
+        after_help = "示例:\n  nsub skills            列出所有扩展指南\n  nsub skills protocols   查看协议定义文档\n  nsub skills templates   查看模板文档\n  nsub skills rules       查看规则文档"
+    )]
     Skills(SkillsArgs),
 }
 
@@ -71,11 +79,11 @@ struct SkillsArgs {
 
 #[derive(Subcommand)]
 enum ListArgs {
-    /// 列出已加载的协议
+    /// 列出已加载的协议 (扩展: nsub skills protocols)
     Protocols,
-    /// 列出可用模板
+    /// 列出可用模板 (扩展: nsub skills templates)
     Templates,
-    /// 列出可用规则
+    /// 列出可用规则 (扩展: nsub skills rules)
     Rules,
 }
 
