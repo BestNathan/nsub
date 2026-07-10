@@ -1,0 +1,10 @@
+# AnyTLS 协议定义
+#
+# URL 格式: anytls://password@host:port?query#name
+# 格式与 hysteria2 兼容，仅 scheme 不同
+
+[protocol]
+schemes = ["anytls"]
+
+[decode]
+fragment = "urldecode"
