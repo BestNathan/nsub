@@ -40,11 +40,11 @@ case "${OS_GO}-${ARCH_TRIPLE}" in
     darwin-aarch64) TARGET="aarch64-apple-darwin" ;;
 esac
 
-# ── Get version ───────────────────────────────────────────────────
+# ── Get target version + release notes ────────────────────────────
 if [ -z "${VERSION:-}" ]; then
     echo "→ Fetching latest release..."
-    VERSION=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null \
-        | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": *"\(.*\)".*/\1/' || true)
+    RELEASE_JSON=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null || true)
+    VERSION=$(echo "$RELEASE_JSON" | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": *"\(.*\)".*/\1/' || true)
     if [ -z "$VERSION" ]; then
         VERSION=$(git ls-remote --tags --sort=-version:refname \
             "https://github.com/${REPO}.git" 'v*' 2>/dev/null \
@@ -55,9 +55,27 @@ if [ -z "${VERSION:-}" ]; then
             | sed 's/.*refs\/tags\/\(v.*\)/\1/' | sort -Vr | head -1 || true)
     fi
     [ -z "$VERSION" ] && { echo "Failed to detect latest version"; exit 1; }
+else
+    RELEASE_JSON=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/tags/${VERSION}" 2>/dev/null || true)
 fi
 
-echo "→ Installing ${APP} ${VERSION} (${TARGET})..."
+# ── Show release notes ────────────────────────────────────────────
+echo "→ ${APP} ${VERSION} (${TARGET})"
+if [ -n "${RELEASE_JSON:-}" ]; then
+    BODY=$(echo "$RELEASE_JSON" | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    print(data.get('body', ''))
+except: pass
+" 2>/dev/null || true)
+    if [ -n "$BODY" ]; then
+        echo ""
+        echo "$BODY"
+        echo ""
+    fi
+fi
+
 echo "→ Binary : ${BIN_DIR}"
 echo "→ Assets : ${SHARE_DIR}"
 
@@ -91,6 +109,12 @@ for dir in templates protocols rules functions skills; do
 done
 
 # ── Done ──────────────────────────────────────────────────────────
+# Create user skeleton directories
+USER_NSUB="${HOME}/.nsub"
+for dir in templates protocols rules functions skills; do
+    mkdir -p "${USER_NSUB}/${dir}"
+done
+
 cat <<EOF
 
 ✅ ${APP} ${VERSION} installed
@@ -100,6 +124,15 @@ cat <<EOF
      --protocol-dir ${SHARE_DIR}/protocols \\
      --rules-dir     ${SHARE_DIR}/rules \\
      ...
+
+   💡 用户自定义目录: ${USER_NSUB}/
+      放置自定义协议/模板/规则/函数/扩展指南，
+      优先级高于安装目录，可覆盖默认资源。
+
+      示例:
+        ${USER_NSUB}/protocols/my-custom.toml   →  nsub convert 自动加载
+        ${USER_NSUB}/templates/clash/proxy/xxx.tpl  →  覆盖安装模板
+        ${USER_NSUB}/rules/my-rules.toml        →  覆盖安装规则
 EOF
 if ! echo "$PATH" | grep -qF "${BIN_DIR}"; then
     cat <<EOF

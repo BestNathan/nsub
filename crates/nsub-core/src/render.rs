@@ -10,7 +10,7 @@
 use crate::types::{NodeContext, RuleResults};
 use serde::Serialize;
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 use thiserror::Error;
 
@@ -68,10 +68,34 @@ struct NodeGroupContext {
 impl Renderer {
     /// 从 `templates/` 目录加载所有模板
     pub fn load(template_dir: impl AsRef<Path>) -> Result<Self, RenderError> {
-        let pattern = template_dir.as_ref().join("**/*.tpl");
-        let pattern_str = pattern.to_string_lossy().to_string();
+        Self::load_from_dirs(&[template_dir.as_ref().to_path_buf()])
+    }
 
-        let tera = Tera::new(&pattern_str)?;
+    /// 从多个目录加载模板，后列目录的同名模板会覆盖前列
+    ///
+    /// 典型用法:
+    /// ```ignore
+    /// Renderer::load_from_dirs(&[install_dir, user_dir])
+    /// ```
+    /// user_dir 中的模板会覆盖 install_dir 中的同名模板。
+    pub fn load_from_dirs(dirs: &[PathBuf]) -> Result<Self, RenderError> {
+        // 收集所有模板：(name, content)，后列覆盖前列
+        let mut templates: HashMap<String, String> = HashMap::new();
+
+        for dir in dirs {
+            if !dir.is_dir() {
+                continue;
+            }
+            collect_templates(dir, dir, &mut templates)?;
+        }
+
+        // 逐个注册到 Tera
+        let mut tera = Tera::default();
+        for (name, content) in &templates {
+            tera.add_raw_template(name, content)
+                .map_err(RenderError::Tera)?;
+        }
+
         Ok(Self { tera })
     }
 
@@ -213,4 +237,33 @@ impl Renderer {
     pub fn list_templates(&self) -> Vec<String> {
         self.tera.get_template_names().map(String::from).collect()
     }
+}
+
+/// 递归收集目录下所有 `.tpl` 文件，模板名 = 相对于 base 的路径
+///
+/// 后发现的同名模板会覆盖先发现的（HashMap insert 语义），
+/// 因此先扫描低优先级目录，再扫描高优先级目录。
+fn collect_templates(
+    base: &Path,
+    current: &Path,
+    out: &mut HashMap<String, String>,
+) -> Result<(), RenderError> {
+    if !current.is_dir() {
+        return Ok(());
+    }
+    for entry in std::fs::read_dir(current)? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_dir() {
+            collect_templates(base, &path, out)?;
+        } else if path.extension().is_some_and(|e| e == "tpl") {
+            let rel = path
+                .strip_prefix(base)
+                .map_err(|e| RenderError::Io(std::io::Error::other(e.to_string())))?;
+            let name = rel.to_string_lossy().to_string();
+            let content = std::fs::read_to_string(&path)?;
+            out.insert(name, content);
+        }
+    }
+    Ok(())
 }

@@ -17,7 +17,7 @@ use crate::types::NodeContext;
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -58,6 +58,10 @@ pub struct DecodeConfig {
 }
 
 /// 协议注册表 — 从 `protocols/` 目录加载所有 TOML 文件
+///
+/// 支持多目录加载，后加载的目录中相同 scheme 会覆盖先加载的。
+/// 典型用法：先加载安装目录，再加载用户目录（`~/.nsub/protocols/`），
+/// 用户自定义协议可覆盖默认安装的协议。
 pub struct ProtocolRegistry {
     /// scheme → ProtocolDef
     definitions: HashMap<String, ProtocolDef>,
@@ -65,22 +69,38 @@ pub struct ProtocolRegistry {
 }
 
 impl ProtocolRegistry {
-    /// 从目录加载所有 `*.toml` 协议定义
+    /// 从单个目录加载所有 `*.toml` 协议定义
     pub fn load(dir: impl AsRef<Path>) -> Result<Self, ProtocolError> {
+        Self::load_from_dirs(&[dir.as_ref().to_path_buf()])
+    }
+
+    /// 从多个目录加载，后列目录的协议覆盖前列同名 scheme
+    ///
+    /// 典型用法:
+    /// ```ignore
+    /// ProtocolRegistry::load_from_dirs(&[install_dir, user_dir])
+    /// ```
+    /// user_dir 中的协议定义会覆盖 install_dir 中相同 scheme 的定义。
+    pub fn load_from_dirs(dirs: &[PathBuf]) -> Result<Self, ProtocolError> {
         let mut definitions = HashMap::new();
 
-        for entry in std::fs::read_dir(dir)? {
-            let entry = entry?;
-            let path = entry.path();
-            if path.extension().is_none_or(|e| e != "toml") {
+        for dir in dirs {
+            if !dir.is_dir() {
                 continue;
             }
+            for entry in std::fs::read_dir(dir)? {
+                let entry = entry?;
+                let path = entry.path();
+                if path.extension().is_none_or(|e| e != "toml") {
+                    continue;
+                }
 
-            let content = std::fs::read_to_string(&path)?;
-            let def: ProtocolDef = toml::from_str(&content)?;
+                let content = std::fs::read_to_string(&path)?;
+                let def: ProtocolDef = toml::from_str(&content)?;
 
-            for scheme in &def.protocol.schemes {
-                definitions.insert(scheme.clone(), def.clone());
+                for scheme in &def.protocol.schemes {
+                    definitions.insert(scheme.clone(), def.clone());
+                }
             }
         }
 
@@ -88,6 +108,13 @@ impl ProtocolRegistry {
             definitions,
             pipe_registry: PipeRegistry::new(),
         })
+    }
+
+    /// 列出所有已注册的 scheme（用于调试和 list 命令）
+    pub fn list_schemes(&self) -> Vec<&String> {
+        let mut schemes: Vec<&String> = self.definitions.keys().collect();
+        schemes.sort();
+        schemes
     }
 
     /// 按 scheme 查找协议定义
