@@ -86,7 +86,7 @@ tar xzf "${TMP}/${ARCHIVE}" -C "${TMP}"
 
 cp "${TMP}/${APP}" "${BIN_DIR}/${APP}"
 chmod +x "${BIN_DIR}/${APP}"
-for dir in templates protocols rules functions; do
+for dir in templates protocols rules functions skills; do
     [ -d "${TMP}/${dir}" ] && cp -r "${TMP}/${dir}" "${SHARE_DIR}/"
 done
 

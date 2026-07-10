@@ -25,6 +25,8 @@ enum Command {
     /// 列出可用资源
     #[command(subcommand)]
     List(ListArgs),
+    /// 查看扩展指南 (protocols, templates, rules, functions)
+    Skills(SkillsArgs),
 }
 
 #[derive(clap::Args)]
@@ -56,6 +58,15 @@ struct ConvertArgs {
     /// 模板目录
     #[arg(long)]
     template_dir: Option<PathBuf>,
+}
+
+#[derive(clap::Args)]
+struct SkillsArgs {
+    /// 查看哪个 skill（不传则列出所有可用 skill）
+    name: Option<String>,
+    /// skills 目录（默认自动检测）
+    #[arg(long)]
+    skills_dir: Option<PathBuf>,
 }
 
 #[derive(Subcommand)]
@@ -133,6 +144,62 @@ async fn main() -> Result<()> {
                 }
             }
         },
+        Command::Skills(args) => {
+            let base = args
+                .skills_dir
+                .unwrap_or_else(|| default_asset_dir("skills"));
+
+            match args.name {
+                Some(name) => {
+                    let skill_path = base.join(&name).join("SKILL.md");
+                    if skill_path.is_file() {
+                        let content = std::fs::read_to_string(&skill_path)?;
+                        println!("{}", content);
+                    } else {
+                        eprintln!(
+                            "未找到 skill '{}' (查找路径: {})",
+                            name,
+                            skill_path.display()
+                        );
+                        eprintln!();
+                        eprintln!("可用 skills:");
+                        for entry in std::fs::read_dir(&base)? {
+                            let entry = entry?;
+                            if entry.path().is_dir() {
+                                let n = entry.file_name().to_string_lossy().to_string();
+                                if entry.path().join("SKILL.md").is_file() {
+                                    eprintln!("  {n}");
+                                }
+                            }
+                        }
+                        anyhow::bail!("skill '{}' not found", name);
+                    }
+                }
+                None => {
+                    println!("可用 skills ({}):", base.display());
+                    println!();
+                    for entry in std::fs::read_dir(&base)? {
+                        let entry = entry?;
+                        if entry.path().is_dir() {
+                            let n = entry.file_name().to_string_lossy().to_string();
+                            let skill_path = entry.path().join("SKILL.md");
+                            if skill_path.is_file() {
+                                // 读取第一行（标题）作为简介
+                                let content = std::fs::read_to_string(&skill_path)?;
+                                let title = content
+                                    .lines()
+                                    .find(|l| l.starts_with("# "))
+                                    .map(|l| l.trim_start_matches("# ").to_string())
+                                    .unwrap_or_else(|| n.clone());
+                                println!("  {:<16} {}", format!("{n}:"), title);
+                            }
+                        }
+                    }
+                    println!();
+                    println!("使用 `nsub skills <name>` 查看详细内容");
+                }
+            }
+        }
         Command::Convert(args) => {
             run_convert(args).await?;
         }

@@ -79,7 +79,8 @@ jobs:
           cp -r templates dist/
           cp -r protocols dist/
           cp -r rules dist/
-          cp -r functions dist/
+          cp -r functions dist/ 2>/dev/null || true
+          cp -r skills dist/
 
           cd dist
           tar czf ../${{ env.APP_NAME }}-${{ matrix.target }}.tar.gz *
@@ -93,7 +94,8 @@ jobs:
           xcopy /E /I templates dist\templates
           xcopy /E /I protocols dist\protocols
           xcopy /E /I rules dist\rules
-          xcopy /E /I functions dist\functions
+          xcopy /E /I functions dist\functions 2>nul || echo skip
+          xcopy /E /I skills dist\skills
           Compress-Archive -Path dist\* -DestinationPath ${{ env.APP_NAME }}-${{ matrix.target }}.zip
 
       - name: Upload artifact
